@@ -1,0 +1,15 @@
+{
+  "name": "deepseek-v4-webapp",
+  "version": "1.0.0",
+  "description": "Web app using DeepSeek V4",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "openai": "^4.28.0"
+  }
+}

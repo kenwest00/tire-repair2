@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tire Fix Near Me</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    header p { opacity: 0.8; font-size: 0.9rem; }
+    
+    .location-bar {
+      background: #fff;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .location-bar button {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .location-bar button:hover { background: #d63850; }
+    .location-bar input {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .location-bar .location-status {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .location-bar .location-status.synced { color: #22c55e; }
+
+    .search-bar {
+      background: #fff;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .search-bar input:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    .filters {
+      background: #fff;
+      padding: 0.75rem 1rem;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      border-bottom: 1px solid #eee;
+    }
+    .filters button {
+      background: #f0f0f0;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filters button.active {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .results-count { color: #666; font-size: 0.9rem; }
+
+    .shop-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .shop-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .shop-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .shop-rating {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #1a1a2e;
+    }
+    .shop-rating .stars { color: #f59e0b; }
+    .shop-reviews { font-size: 0.8rem; color: #666; font-weight: 400; }
+    .no-rating { color: #999; font-weight: 400; font-size: 0.85rem; }
+
+    .shop-distance {
+      font-size: 0.85rem;
+      color: #e94560;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .shop-location-row {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    .shop-address {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .shop-hours {
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .shop-hours.open { background: #dcfce7; color: #166534; }
+    .shop-hours.closed { background: #fee2e2; color: #991b1b; }
+    .shop-hours.unknown { background: #f3f4f6; color: #666; }
+
+    .shop-services {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .service-tag {
+      background: #e8f4f8;
+      color: #1a5f7a;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .shop-contact {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .shop-contact a {
+      flex: 1;
+      text-align: center;
+      padding: 0.6rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .call-btn {
+      background: #22c55e;
+      color: #fff;
+    }
+    .directions-btn {
+      background: #1a1a2e;
+      color: #fff;
+    }
+    .call-btn { background: #22c55e; color: #fff; }
+    .directions-btn { background: #1a1a2e; color: #fff; }
+    .reviews-btn { background: #f59e0b; color: #fff; font-weight: 600; }
+    .reviews-btn:hover { background: #d97706; }
+    .highly-rated {
+      color: #059669;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.4rem;
+      background: #d1fae5;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .permission-prompt {
+      background: #fef3c7;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .permission-prompt button {
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      cursor: pointer;
+    }
+
+    .review-section {
+      display: none;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #eee;
+    }
+    .review-section.expanded { display: block; }
+
+    .review-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .review-item:last-child { border-bottom: none; }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+    .review-author { font-weight: 600; font-size: 0.9rem; }
+    .review-rating { color: #f59e0b; font-size: 0.85rem; }
+    .review-text { color: #444; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.35rem; }
+    .review-date { color: #999; font-size: 0.75rem; }
+
+    .no-reviews {
+      text-align: center;
+      padding: 1rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .reviews-toggle {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔧 Tire Fix Near Me</h1>
+    <p>Find nearby tire shops, see ratings & hours</p>
+  </header>
+
+  <div class="location-bar">
+    <button id="detectBtn">
+      <span>📍</span> Use My Location
+    </button>
+    <input type="text" id="locationInput" placeholder="Enter zip code...">
+    <span class="location-status" id="locationStatus"></span>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search shops, services..., e.g. 'tire repair Atlanta'">
+  </div>
+
+  <div class="filters">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="open">Open Now</button>
+    <button data-filter="24hr">24/7</button>
+    <button data-filter="rating">Top Rated</button>
+    <button data-filter="emergency">Emergency</button>
+  </div>
+
+  <div class="container">
+    <div class="results-header">
+      <span class="results-count" id="resultsCount"></span>
+    </div>
+    <div id="shopsList"></div>
+  </div>
+
+  <script>
+    const detectBtn = document.getElementById('detectBtn');
+    const locationInput = document.getElementById('locationInput');
+    const searchInput = document.getElementById('searchInput');
+    const locationStatus = document.getElementById('locationStatus');
+    const shopsList = document.getElementById('shopsList');
+    const resultsCount = document.getElementById('resultsCount');
+    const filterBtns = document.querySelectorAll('.filters button');
+
+    let allShops = [];
+    let userLat = null, userLng = null;
+    let currentFilter = 'all';
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 3959;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function getCurrentHours() {
+      const now = new Date();
+      return now.getDay() * 24 + now.getHours();
+    }
+
+    function parseHours(hoursStr) {
+      const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentHour = now.getHours();
+      
+      if (hoursStr.includes('24/7')) return 'open';
+      
+      const parts = hoursStr.split(',').map(p => p.trim());
+      for (const part of parts) {
+        const match = part.match(/([A-Za-z]{3})-([A-Za-z]{3})\s+(\d+)AM?-(\d+)(?:PM?)?/);
+        if (match) {
+          const startDay = dayMap[match[1]];
+          const endDay = dayMap[match[2]];
+          const startHour = parseInt(match[3]);
+          const endHour = parseInt(match[4]) + (part.includes('PM') ? 12 : 0);
+          
+          if (currentDay >= startDay && currentDay <= endDay) {
+            if (currentHour >= startHour && currentHour < endHour) return 'open';
+          }
+        }
+      }
+      return 'unknown';
+    }
+
+    async function init() {
+      try {
+        const res = await fetch('/api/places');
+        allShops = await res.json();
+        renderShops(allShops);
+
+        if (navigator.geolocation) {
+          detectBtn.addEventListener('click', detectLocation);
+        }
+      } catch (e) {
+        shopsList.innerHTML = `<div class="no-results">Error: ${e.message}</div>`;
+      }
+    }
+
+    function detectLocation() {
+      detectBtn.disabled = true;
+      locationStatus.textContent = 'Detecting...';
+      locationStatus.classList.remove('synced');
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+          locationStatus.textContent = '✓ Location synced';
+          locationStatus.classList.add('synced');
+          detectBtn.disabled = false;
+          
+          const sorted = [...allShops].map(shop => ({
+            ...shop,
+            distance: getDistance(userLat, userLng, shop.lat, shop.lng)
+          })).sort((a, b) => a.distance - b.distance);
+          
+          renderShops(sorted);
+        },
+        (err) => {
+          locationStatus.textContent = '✗ Location denied';
+          detectBtn.disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function applyFilter(shops, filter) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentDay = now.getDay();
+
+      return shops.filter(shop => {
+        if (filter === 'all') return true;
+        if (filter === 'open') {
+          const status = parseHours(shop.hours);
+          return status === 'open';
+        }
+        if (filter === '24hr') return shop.hours.includes('24/7');
+        if (filter === 'rating') return shop.rating >= 4.5;
+        if (filter === 'emergency') return shop.services.includes('Emergency Service') || shop.hours.includes('24/7');
+        return true;
+      });
+    }
+
+    function renderShops(shops) {
+      const filtered = applyFilter(shops, currentFilter);
+      resultsCount.textContent = `${filtered.length} shop${filtered.length !== 1 ? 's' : ''} found`;
+
+      if (filtered.length === 0) {
+        shopsList.innerHTML = '<div class="no-results">No shops match your filters</div>';
+        return;
+      }
+
+      shopsList.innerHTML = filtered.map(shop => {
+        const hoursStatus = parseHours(shop.hours);
+        const distanceStr = shop.distance !== undefined 
+          ? `${shop.distance.toFixed(1)} mi away` 
+          : '';
+        
+        const ratingDisplay = shop.rating > 0 
+          ? `<span class="stars">★</span> ${shop.rating} <span class="shop-reviews">(${shop.reviews} reviews)</span>`
+          : '<span class="no-rating">No rating yet</span>';
+        
+        const reviewsLink = shop.reviews > 0 
+          ? `📖 ${shop.reviews} Reviews`
+          : '📖 No Reviews';
+        const reviewLabel = shop.reviews > 0 ? `📖 ${shop.reviews} Reviews ▼` : '📖 No Reviews';
+        
+        const reviewsData = shop.reviews_data || [];
+        const reviewsHtml = reviewsData.length > 0 
+          ? reviewsData.map(r => `
+            <div class="review-item">
+              <div class="review-header">
+                <span class="review-author">${r.author}</span>
+                <span class="review-rating">${'★'.repeat(r.rating)}</span>
+              </div>
+              <div class="review-text">${r.text}</div>
+              <div class="review-date">${r.date}</div>
+            </div>
+          `).join('')
+          : '<div class="no-reviews">No reviews yet</div>';
+        
+        return `
+          <div class="shop-card">
+            <div class="shop-header">
+              <div class="shop-name">${shop.name}</div>
+              <div class="shop-rating">${ratingDisplay}</div>
+            </div>
+            ${distanceStr ? `<div class="shop-distance">${distanceStr}</div>` : ''}
+            <div class="shop-location-row">📍 ${shop.city}, ${shop.state}</div>
+            <div class="shop-address">${shop.address || ''}</div>
+            <div class="shop-hours ${hoursStatus}">${hoursStatus === 'open' ? '🟢 Open' : hoursStatus === 'closed' ? '🔴 Closed' : '⚪ Hours unknown'} · ${shop.hours || 'Call for hours'}</div>
+            <div class="shop-services">
+              ${shop.services.map(s => `<span class="service-tag">${s}</span>`).join('')}
+            </div>
+            <div class="shop-contact">
+              ${shop.phone ? `<a href="tel:${shop.phone}" class="call-btn">📞 Call</a>` : ''}
+              <button class="reviews-btn reviews-toggle" data-shop="${shop.id}">${reviewLabel}</button>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${shop.lat},${shop.lng}" target="_blank" class="directions-btn">🚗 Directions</a>
+            </div>
+            <div class="review-section" id="reviews-${shop.id}">
+              ${reviewsHtml}
+            </div>
+            ${shop.rating >= 4.5 ? `<div class="highly-rated">🏆 Highly Rated (${shop.rating}★)</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    locationInput.addEventListener('change', async () => {
+      const query = locationInput.value.trim();
+      if (!query) return;
+      
+      const isZip = /^\d{5}$/.test(query);
+      
+      try {
+        let res;
+        if (isZip) {
+          res = await fetch(`/api/places?zip=${query}`);
+        } else {
+          const geoRes = await fetch(`/api/geocode?address=${encodeURIComponent(query)}`);
+          const geo = await geoRes.json();
+          if (geo.error) {
+            locationStatus.textContent = geo.error;
+            return;
+          }
+          res = await fetch(`/api/places?lat=${geo.lat}&lng=${geo.lng}`);
+        }
+        
+        const shops = await res.json();
+        
+        if (shops.length > 0) {
+          locationStatus.textContent = '✓ Location set';
+          locationStatus.classList.add('synced');
+        } else {
+          locationStatus.textContent = 'No shops nearby';
+        }
+        
+        renderShops(shops);
+      } catch (e) {
+        locationStatus.textContent = 'Error finding location';
+      }
+    });
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        
+        fetchAndRender();
+      });
+    });
+
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(fetchAndRender, 300);
+    });
+
+    shopsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('reviews-toggle')) {
+        const shopId = e.target.dataset.shop;
+        const section = document.getElementById(`reviews-${shopId}`);
+        if (section) {
+          section.classList.toggle('expanded');
+          e.target.textContent = section.classList.contains('expanded') 
+            ? `📖 ${e.target.textContent.includes('▼') ? '▲ Hide' : '▼'}`
+            : `📖 ${e.target.textContent.replace('▲ Hide', '▼')}`;
+        }
+      }
+    });
+
+    async function fetchAndRender() {
+      const params = new URLSearchParams();
+      if (searchInput.value.trim()) {
+        params.append('search', searchInput.value.trim());
+      }
+      if (userLat && userLng) {
+        params.append('lat', userLat);
+        params.append('lng', userLng);
+      }
+      
+      try {
+        const res = await fetch(`/api/places?${params}`);
+        const shops = await res.json();
+        renderShops(shops);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
