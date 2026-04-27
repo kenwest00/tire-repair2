@@ -381,6 +381,8 @@ let allShops = [];
     function parseHours(hoursStr) {
       if (!hoursStr) return 'unknown';
       if (hoursStr.includes('24/7')) return 'open';
+      if (hoursStr.includes('closed') || hoursStr.includes('Closed')) return 'closed';
+      if (hoursStr.includes('Open')) return 'open';
       return 'unknown';
     }
 
@@ -476,7 +478,7 @@ let allShops = [];
       resultsCount.textContent = `${filtered.length} shop${filtered.length !== 1 ? 's' : ''} found`;
 
       shopsList.innerHTML = filtered.map(shop => {
-        const hoursStatus = parseHours(shop.hours);
+        const hoursStatus = shop.openNow === true ? 'open' : shop.openNow === false ? 'closed' : parseHours(shop.hours);
         const distanceStr = shop.distance !== undefined 
           ? `${shop.distance.toFixed(1)} mi away` 
           : '';
