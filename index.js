@@ -130,7 +130,7 @@ app.get('/api/places', async (req, res) => {
       const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
-    const nearby = places.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 60);
+    const nearby = places.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 100);
     const result = nearby.length ? nearby : places;
     return res.json(result.map(s => ({ ...s, distance: haversine(userLat, userLng, s.lat, s.lng), reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
   }
