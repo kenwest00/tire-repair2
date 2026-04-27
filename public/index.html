@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tire Fix Near Me</title>
-  <link href='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css' rel='stylesheet' />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -35,27 +34,27 @@
       background: #fff;
       padding: 0.75rem;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 0.5rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
     .location-bar button {
-      background: #1a1a2e;
+      background: #e94560;
       color: #fff;
       border: none;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
+      padding: 0.75rem;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 0.85rem;
-      white-space: nowrap;
+      font-size: 1rem;
+      font-weight: 600;
     }
-    .location-bar button:hover { background: #16213e; }
+    .location-bar button:hover { background: #d63850; }
     .location-bar input {
-      flex: 1;
-      padding: 0.5rem 0.75rem;
+      width: 100%;
+      padding: 0.75rem;
       border: 1px solid #ddd;
       border-radius: 6px;
-      font-size: 0.9rem;
+      font-size: 1rem;
       text-align: center;
     }
     .location-bar .location-status {
@@ -334,15 +333,9 @@
   </header>
 
   <div class="location-bar">
-    <button id="detectBtn">
-      <span>📍</span> Use My Location
-    </button>
-    <input type="text" id="locationInput" placeholder="Enter zip code...">
+    <button id="detectBtn">📍 Find Tire Repair Near Me</button>
+    <input type="text" id="locationInput" placeholder="Enter city & state or zip code (e.g. Nashville TN or 37204)">
     <span class="location-status" id="locationStatus"></span>
-  </div>
-
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Search shops, services..., e.g. 'tire repair Atlanta'">
   </div>
 
   <div class="filters">
@@ -352,11 +345,7 @@
     <button data-filter="rating">Top Rated</button>
     <button data-filter="emergency">Emergency</button>
     <button class="view-toggle" id="mapToggleBtn">🗺️ Map</button>
-  </div>
-
-  <div class="map-container" id="mapContainer">
-    <div id="map"></div>
-  </div>
+</div>
 
   <div class="container">
     <div class="results-header">
@@ -569,7 +558,7 @@
         const shops = await res.json();
         
         if (shops.length > 0) {
-          locationStatus.textContent = '✓ Location set';
+          locationStatus.textContent = `${shops.length} shops found`;
           locationStatus.classList.add('synced');
         } else {
           locationStatus.textContent = 'No shops nearby';
@@ -581,20 +570,31 @@
       }
     });
 
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        
-        fetchAndRender();
-      });
-    });
-
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(fetchAndRender, 300);
+    detectBtn.addEventListener('click', async () => {
+      locationStatus.textContent = 'Finding shops near you...';
+      
+      if (!navigator.geolocation) {
+        locationStatus.textContent = 'Geolocation not supported';
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const res = await fetch(`/api/places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+            const shops = await res.json();
+            locationStatus.textContent = `${shops.length} shops found near you`;
+            locationStatus.classList.add('synced');
+            renderShops(shops);
+          } catch (e) {
+            locationStatus.textContent = 'Error finding shops';
+          }
+        },
+        (err) => {
+          locationStatus.textContent = 'Location access denied';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
     });
 
     shopsList.addEventListener('click', (e) => {
@@ -608,92 +608,9 @@
             : `📖 ${e.target.textContent.replace('▲ Hide', '▼')}`;
         }
       }
-    });
+});
 
-    const mapToggleBtn = document.getElementById('mapToggleBtn');
-    const mapContainer = document.getElementById('mapContainer');
-    const mapContainerEl = document.getElementById('map');
-    let map = null;
-    let mapMarkers = [];
-    let showMap = false;
-
-    async function initMap() {
-      if (!window.mapboxgl) {
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js';
-        script.onload = () => setupMap();
-        document.head.appendChild(script);
-      } else {
-        setupMap();
-      }
-    }
-
-    function setupMap() {
-      mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN_HERE';
-      
-      map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-98.5795, 39.8283],
-        zoom: 4
-      });
-
-      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-      mapToggleBtn.addEventListener('click', () => {
-        showMap = !showMap;
-        if (showMap) {
-          mapContainer.classList.add('active');
-          document.querySelector('.container').style.display = 'none';
-          mapToggleBtn.classList.add('active');
-          map.resize();
-        } else {
-          mapContainer.classList.remove('active');
-          document.querySelector('.container').style.display = 'block';
-          mapToggleBtn.classList.remove('active');
-        }
-      });
-    }
-
-    function updateMapMarkers(shops) {
-      if (!map || !window.mapboxgl) return;
-
-      mapMarkers.forEach(m => m.remove());
-      mapMarkers = [];
-
-      shops.forEach(shop => {
-        if (shop.lat && shop.lng) {
-          const el = document.createElement('div');
-          el.className = 'marker';
-          el.style.backgroundColor = shop.rating >= 4.5 ? '#22c55e' : '#e94560';
-          el.style.width = '20px';
-          el.style.height = '20px';
-          el.style.borderRadius = '50%';
-          el.style.border = '2px solid white';
-          el.style.cursor = 'pointer';
-
-          const popup = new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`<strong>${shop.name}</strong><br>★ ${shop.rating} (${shop.reviews})<br>${shop.address || shop.city + ', ' + shop.state}`);
-
-          const marker = new mapboxgl.Marker(el)
-            .setLngLat([shop.lng, shop.lat])
-            .setPopup(popup)
-            .addTo(map);
-
-          mapMarkers.push(marker);
-        }
-      });
-
-      if (shops.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        shops.forEach(s => {
-          if (s.lat && s.lng) bounds.extend([s.lng, s.lat]);
-        });
-        map.fitBounds(bounds, { padding: 50, maxZoom: 12 });
-      }
-    }
-
-    async function fetchAndRender() {
+    init();
       const params = new URLSearchParams();
       if (searchInput.value.trim()) {
         params.append('search', searchInput.value.trim());
