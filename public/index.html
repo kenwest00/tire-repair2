@@ -408,19 +408,16 @@ let allShops = [];
       if (navigator.geolocation) {
         detectBtn.addEventListener('click', detectLocation);
       }
-        
-        locationInput.addEventListener('keypress', async (e) => {
-          if (e.key === 'Enter') {
-            await searchLocation();
-          }
-        });
-        
-        locationInput.addEventListener('change', async () => {
+      
+      locationInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
           await searchLocation();
-        });
-      } catch (e) {
-        shopsList.innerHTML = `<div class="no-results">Error loading: ${e.message}</div>`;
-      }
+        }
+      });
+      
+      locationInput.addEventListener('change', async () => {
+        await searchLocation();
+      });
     }
 
     function detectLocation() {
