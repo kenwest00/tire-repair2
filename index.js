@@ -104,6 +104,11 @@ async function fetchGooglePlacesShops(lat, lng, radius = 50000) {
 app.get('/api/places', async (req, res) => {
   const { lat, lng, zip } = req.query;
   
+  // Without location, return empty - user must provide location first
+  if (!lat && !lng && !zip) {
+    return res.json([]);
+  }
+  
   let userLat, userLng;
   
   if (zip && zipCodes[zip]) {
@@ -119,7 +124,8 @@ app.get('/api/places', async (req, res) => {
     return res.json(places.map(s => ({ ...s, reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
   }
   
-  res.json(shops.map(s => ({ ...s, reviews_data: s.reviews_data || [] })));
+  // Return empty if no valid location
+  res.json([]);
 });
 
 app.get('/api/geocode', (req, res) => {

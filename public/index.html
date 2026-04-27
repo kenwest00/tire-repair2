@@ -401,14 +401,13 @@ let allShops = [];
     }
 
     async function init() {
-      try {
-        const res = await fetch('/api/places');
-        allShops = await res.json();
-        renderShops(allShops);
-        
-        if (navigator.geolocation) {
-          detectBtn.addEventListener('click', detectLocation);
-        }
+      // Don't load shops on init - require location first for emergency use
+      allShops = [];
+      renderShops([]);
+      
+      if (navigator.geolocation) {
+        detectBtn.addEventListener('click', detectLocation);
+      }
         
         locationInput.addEventListener('keypress', async (e) => {
           if (e.key === 'Enter') {
