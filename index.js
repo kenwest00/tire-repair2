@@ -121,7 +121,18 @@ app.get('/api/places', async (req, res) => {
   
   if (userLat && userLng) {
     const places = await fetchGooglePlacesShops(userLat, userLng);
-    return res.json(places.map(s => ({ ...s, reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
+    // limit to region (60 miles) around user
+    function haversine(lat1, lon1, lat2, lon2){
+      const R = 3959;
+      const dLat = (lat2 - lat1) * Math.PI/180;
+      const dLon = (lon2 - lon1) * Math.PI/180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+      const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    const nearby = places.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 60);
+    const result = nearby.length ? nearby : places;
+    return res.json(result.map(s => ({ ...s, distance: haversine(userLat, userLng, s.lat, s.lng), reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
   }
   
   // Return empty if no valid location
