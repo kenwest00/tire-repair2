@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const zipCodes = require('./data/zipCodes.json');
 const localShops = require('./data/shops');
 const db = require('./data/database.json');
@@ -15,6 +16,37 @@ app.use(express.json());
 app.use(express.static('public'));
 
 let shops = db.shops.concat(localShops);
+
+function findShopByPlaceId(placeId) {
+  return db.shops.find(s => s.id === placeId);
+}
+
+function findShopByNameAndAddress(name, address) {
+  return db.shops.find(s => s.name === name && s.address === address);
+}
+
+function updateOrAddShop(shop) {
+  const existing = findShopByPlaceId(shop.id) || findShopByNameAndAddress(shop.name, shop.address);
+  
+  if (existing) {
+    existing.rating = shop.rating;
+    existing.reviews = shop.reviews;
+    existing.hours = shop.hours;
+    existing.last_updated = new Date().toISOString();
+    console.log(`Updated: ${shop.name}`);
+  } else {
+    shop.created_at = new Date().toISOString();
+    shop.last_updated = shop.created_at;
+    db.shops.push(shop);
+    console.log(`Added: ${shop.name}`);
+  }
+}
+
+function saveDatabase() {
+  fs.writeFileSync('./data/database.json', JSON.stringify(db, null, 2));
+  shops = [...db.shops, ...localShops];
+  console.log(`Database saved. Total shops: ${db.shops.length}`);
+}
 
 async function fetchGooglePlacesShops(lat, lng, radius = 50000) {
   if (!GOOGLE_API_KEY) {
@@ -39,7 +71,7 @@ async function fetchGooglePlacesShops(lat, lng, radius = 50000) {
     const data = await res.json();
     
     if (data.results) {
-      return data.results.map((place) => ({
+      const places = data.results.map((place) => ({
         id: place.place_id,
         name: place.name,
         address: place.vicinity || place.formatted_address || '',
@@ -55,6 +87,12 @@ async function fetchGooglePlacesShops(lat, lng, radius = 50000) {
         hours: place.opening_hours?.weekday_text?.join(', ') || 'Hours not available',
         type: 'google'
       }));
+      
+      // Auto-save to database
+      places.forEach(updateOrAddShop);
+      saveDatabase();
+      
+      return places;
     }
   } catch (e) {
     console.error('Google Places API error:', e.message);
