@@ -181,7 +181,78 @@ app.get('/api/geocode', (req, res) => {
     "minneapolis": { lat: 44.9778, lng: -93.2650 },
     "tulsa": { lat: 36.1540, lng: -95.9928 },
     "arlington": { lat: 32.7357, lng: -97.1081 },
-    "new orleans": { lat: 29.9511, lng: -90.0715 }
+    "new orleans": { lat: 29.9511, lng: -90.0715 },
+    "brooklyn": { lat: 40.6501, lng: -73.9496 },
+    "bronx": { lat: 40.8448, lng: -73.8648 },
+    "queens": { lat: 40.7282, lng: -73.7949 },
+    "manhattan": { lat: 40.7831, lng: -73.9712 },
+    "jersey city": { lat: 40.7178, lng: -74.0431 },
+    "tampa": { lat: 27.9506, lng: -82.4572 },
+    "jacksonville": { lat: 30.3322, lng: -81.6557 },
+    "pittsburgh": { lat: 40.4406, lng: -79.9959 },
+    "st louis": { lat: 38.6270, lng: -90.1994 },
+    "st. louis": { lat: 38.6270, lng: -90.1994 },
+    "indianapolis": { lat: 39.7684, lng: -86.1581 },
+    "columbus": { lat: 39.9612, lng: -82.9988 },
+    "fort worth": { lat: 32.7555, lng: -97.3308 },
+    "wichita": { lat: 37.6872, lng: -97.3301 },
+    "el paso": { lat: 31.7619, lng: -106.4850 },
+    "san antonio": { lat: 29.4241, lng: -98.4936 },
+    "miami": { lat: 25.7617, lng: -80.1918 },
+    "cleveland": { lat: 41.4993, lng: -81.6944 },
+    "cincinnati": { lat: 39.1031, lng: -84.5120 },
+    "akron": { lat: 41.4993, lng: -81.6810 },
+    "toledo": { lat: 41.6528, lng: -83.5379 },
+    "birmingham": { lat: 33.5186, lng: -86.8104 },
+    "montgomery": { lat: 32.3792, lng: -86.3007 },
+    "mobile": { lat: 30.6954, lng: -88.0399 },
+    "richmond": { lat: 37.5407, lng: -77.4360 },
+    "norfolk": { lat: 36.8508, lng: -76.2599 },
+    "hampton": { lat: 37.0299, lng: -76.3452 },
+    "roanoke": { lat: 37.2709, lng: -79.9414 },
+    "fayetteville": { lat: 35.0527, lng: -78.8783 },
+    "greenville": { lat: 34.8526, lng: -82.3940 },
+    "charleston": { lat: 32.7765, lng: -79.9311 },
+    "savannah": { lat: 32.0809, lng: -81.0912 },
+    "hilton head": { lat: 32.2166, lng: -80.7565 },
+    "myrtle beach": { lat: 33.6892, lng: -78.8867 },
+    "asheville": { lat: 35.5951, lng: -82.5515 },
+    "greensboro": { lat: 36.0726, lng: -79.7920 },
+    "winston-salem": { lat: 36.0998, lng: -80.2442 },
+    "durham": { lat: 35.9940, lng: -78.8986 },
+    "chapel hill": { lat: 35.9132, lng: -79.0558 },
+    "wilmington": { lat: 34.2257, lng: -77.9447 },
+    "boise": { lat: 43.6150, lng: -116.2023 },
+    "spokane": { lat: 47.6588, lng: -117.4260 },
+    "tacoma": { lat: 47.2529, lng: -122.4443 },
+    "anchorage": { lat: 61.2181, lng: -149.9003 },
+    "honolulu": { lat: 21.3099, lng: -157.8581 },
+    "eugene": { lat: 44.0521, lng: -123.0868 },
+    "salem": { lat: 44.9429, lng: -123.0350 },
+    "medford": { lat: 42.3305, lng: -122.8767 },
+    "bend": { lat: 44.0582, lng: -121.3153 },
+    "corvallis": { lat: 44.5646, lng: -123.2720 },
+    // State abbreviations
+    "tn": { lat: 36.1627, lng: -86.7816 },
+    "wv": { lat: 38.5976, lng: -80.4549 },
+    "va": { lat: 37.4316, lng: -78.8069 },
+    "md": { lat: 39.0458, lng: -76.6413 },
+    "dc": { lat: 38.9072, lng: -77.0369 },
+    "me": { lat: 45.2538, lng: -69.4455 },
+    "nh": { lat: 43.1939, lng: -71.5724 },
+    "vt": { lat: 44.5588, lng: -72.5778 },
+    "ri": { lat: 41.5801, lng: -71.5074 },
+    "ct": { lat: 41.6032, lng: -73.0877 },
+    "nj": { lat: 40.0583, lng: -74.4057 },
+    "de": { lat: 38.9108, lng: -75.5277 },
+    "hi": { lat: 19.8968, lng: -155.5828 },
+    "ak": { lat: 61.2181, lng: -149.9003 },
+    "mt": { lat: 46.8797, lng: -110.3626 },
+    "wy": { lat: 43.0750, lng: -107.2903 },
+    "id": { lat: 44.0682, lng: -114.7420 },
+    "nm": { lat: 34.5199, lng: -105.8701 },
+    "ut": { lat: 39.3210, lng: -111.0937 },
+    "or": { lat: 43.8041, lng: -120.5542 }
   };
 
   for (const [cityName, coords] of Object.entries(cityCoords)) {
@@ -189,8 +260,28 @@ app.get('/api/geocode', (req, res) => {
       return res.json({ lat: coords.lat, lng: coords.lng, city: cityName });
     }
   }
+  
+  // Try Google Geocoding for any address
+  if (GOOGLE_API_KEY) {
+    try {
+      const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`;
+      const geoRes = await fetch(geoUrl);
+      const geoData = await geoRes.json();
+      if (geoData.results && geoData.results[0]) {
+        const location = geoData.results[0].geometry.location;
+        return res.json({ lat: location.lat, lng: location.lng, city: address });
+      }
+    } catch (e) {
+      console.error('Google Geocoding error:', e.message);
+    }
+  }
+  
+  // Try zip code lookup if nothing else worked
+  if (zipCodes[address]) {
+    return res.json({ lat: zipCodes[address].lat, lng: zipCodes[address].lng, city: address });
+  }
 
-  res.json({ error: 'City not found' });
+  res.json({ error: 'City not found. Try entering a major city or zip code.' });
 });
 
 app.listen(port, () => {
