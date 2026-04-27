@@ -128,7 +128,7 @@ app.get('/api/places', async (req, res) => {
   res.json([]);
 });
 
-app.get('/api/geocode', (req, res) => {
+app.get('/api/geocode', async (req, res) => {
   const { address } = req.query;
   
   if (!address) {
