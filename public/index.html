@@ -446,7 +446,27 @@ let currentFilter = 'all';
 
     async function searchLocation() {
       const query = locationInput.value.trim();
-      if (!query) return;
+      if (!query) {
+        if (navigator.geolocation) {
+          locationStatus.textContent = 'Finding shops near you...';
+          navigator.geolocation.getCurrentPosition(async (pos) => {
+            try {
+              const res = await fetch(`/api/places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+              const shops = await res.json();
+              regionBanner?.style.display = 'block';
+              regionBanner?.textContent = 'Region: current location';
+              renderShops(shops);
+            } catch (e) {
+              locationStatus.textContent = 'Error finding location';
+            }
+          }, () => {
+            locationStatus.textContent = 'Location access denied';
+          }, { enableHighAccuracy: true, timeout: 10000 });
+        } else {
+          locationStatus.textContent = 'Enter a location';
+        }
+        return;
+      }
       
       const isZip = /^\d{5}$/.test(query);
       
