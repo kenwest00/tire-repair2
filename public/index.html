@@ -339,19 +339,14 @@
     <span class="location-status" id="locationStatus"></span>
   </div>
 
-<div class="filters">
-    <button class="active" data-filter="all">All</button>
-    <button data-filter="open">Open Now</button>
-    <button class="view-toggle" id="mapToggleBtn">🗺️ Map</button>
-  </div>
-
-  <div class="map-container" id="mapContainer" style="display:none;">
+<div class="map-container" id="mapContainer" style="display:none;">
     <div id="map" style="width:100%;height:400px;border-radius:8px;"></div>
   </div>
 
   <div class="container">
     <div class="results-header">
       <span class="results-count" id="resultsCount"></span>
+      <button class="view-toggle" id="mapToggleBtn" style="padding:0.4rem 0.6rem;font-size:0.8rem;">🗺️ Map</button>
     </div>
     <div id="shopsList"></div>
   </div>
@@ -367,136 +362,18 @@
 
 let allShops = [];
     let userLat = null, userLng = null;
-    let currentFilter = 'all';
-
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 3959;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-    function parseHours(hoursStr) {
-      if (!hoursStr) return 'unknown';
-      const hours = hoursStr.toLowerCase();
-      if (hours.includes('24/7') || hours.includes('24 hours')) return 'open';
-      if (hours.includes('closed') || hours.includes('not open')) return 'closed';
-      // Parse hours like "Mon-Fri 8AM-6PM"
-      const now = new Date();
-      const day = now.getDay();
-      const hour = now.getHours();
-      const match = hoursStr.match(/([A-Za-z]{3})-([A-Za-z]{3})\s+(\d{1,2})([AP]M?-?\d{1,2})([AP]M?)/i);
-      if (match) {
-        const dayMap = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
-        const startDay = dayMap[match[1].toLowerCase()];
-        const endDay = dayMap[match[2].toLowerCase()];
-        const startHour = parseInt(match[3]) + (match[5]?.toLowerCase().includes('p') ? 12 : 0);
-        const endHour = parseInt(match[4]?.replace('-','') || match[3]) + (match[5]?.toLowerCase().includes('p') ? 12 : 0);
-        if (day >= startDay && day <= endDay && hour >= startHour && hour < endHour) return 'open';
-        return 'closed';
-      }
-      return 'unknown';
-    }
-
-    async function init() {
-      // Don't load shops on init - require location first for emergency use
-      allShops = [];
-      renderShops([]);
-      
-      if (navigator.geolocation) {
-        detectBtn.addEventListener('click', detectLocation);
-      }
-      
-      locationInput.addEventListener('keypress', async (e) => {
-        if (e.key === 'Enter') {
-          locationInput.value = locationInput.value.trim();
-          await searchLocation();
-        }
-      });
-      
-      locationInput.addEventListener('change', async () => {
-        await searchLocation();
-      });
-    }
-
-    function detectLocation() {
-      detectBtn.disabled = true;
-      locationStatus.textContent = 'Finding...';
-      locationStatus.classList.remove('synced');
-
-      if (!navigator.geolocation) {
-        locationStatus.textContent = 'Location not supported';
-        detectBtn.disabled = false;
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-          locationStatus.textContent = 'Found!';
-          locationStatus.classList.add('synced');
-          detectBtn.disabled = false;
-          
-          // Fetch shops from API
-          try {
-            const res = await fetch(`/api/places?lat=${userLat}&lng=${userLng}`);
-            const shopList = await res.json();
-            const sorted = shopList.map(shop => ({
-              ...shop,
-              distance: getDistance(userLat, userLng, shop.lat, shop.lng)
-            })).sort((a, b) => a.distance - b.distance);
-            renderShops(sorted);
-          } catch (e) {
-            locationStatus.textContent = 'Error finding shops';
-          }
-        },
-        (err) => {
-          locationStatus.textContent = 'Location denied';
-          detectBtn.disabled = false;
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-
-    function applyFilter(shops, filter) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentDay = now.getDay();
-
-      return shops.filter(shop => {
-        if (filter === 'all') return true;
-        if (filter === 'open') {
-          const status = parseHours(shop.hours);
-          return status === 'open';
-        }
-        if (filter === '24hr') return shop.hours.includes('24/7');
-        if (filter === 'rating') return shop.rating >= 4.5;
-        if (filter === 'emergency') return shop.services.includes('Emergency Service') || shop.hours.includes('24/7');
-        return true;
-      });
-    }
+let currentFilter = 'all';
 
     function renderShops(shops) {
-      const filtered = applyFilter(shops, currentFilter);
-      
-      if (filtered.length === 0) {
-        if (shops.length === 0) {
-          shopsList.innerHTML = '<div class="no-results">Enter your location and tap "Find Tire Repair Near Me" to search nearby</div>';
-        } else {
-          resultsCount.textContent = `${filtered.length} shops found`;
-          shopsList.innerHTML = '<div class="no-results">No shops match your filters</div>';
-        }
+      if (shops.length === 0) {
+        shopsList.innerHTML = '<div class="no-results">Enter your location and tap "Find Tire Repair Near Me" to search nearby</div>';
+        resultsCount.textContent = '';
         return;
       }
       
-      resultsCount.textContent = `${filtered.length} shop${filtered.length !== 1 ? 's' : ''} found`;
+      resultsCount.textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''} found`;
 
-      shopsList.innerHTML = filtered.map(shop => {
+      shopsList.innerHTML = shops.map(shop => {
         const hoursStatus = shop.openNow === true ? 'open' : shop.openNow === false ? 'closed' : parseHours(shop.hours);
         const distanceStr = shop.distance !== undefined 
           ? `${shop.distance.toFixed(1)} mi away` 
