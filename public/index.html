@@ -579,24 +579,6 @@ locationStatus.textContent = 'Error finding location';
     });
 
     init();
-      const params = new URLSearchParams();
-      if (searchInput.value.trim()) {
-        params.append('search', searchInput.value.trim());
-      }
-      if (userLat && userLng) {
-        params.append('lat', userLat);
-        params.append('lng', userLng);
-      }
-      
-      try {
-        const res = await fetch(`/api/places?${params}`);
-        const shops = await res.json();
-        renderShops(shops);
-        if (showMap && map) updateMapMarkers(shops);
-      } catch (e) {
-        console.error(e);
-      }
-    }
 
     init();
   </script>
