@@ -470,8 +470,14 @@ let currentFilter = 'all';
         if (query) {
           regionEl.style.display = 'block';
           regionEl.textContent = `Region: ${query}`;
+        } else if (shops.length > 0 && shops[0].city) {
+          regionEl.style.display = 'block';
+          regionEl.textContent = `Region: ${shops[0].city}${shops[0].state ? ', ' + shops[0].state : ''}`;
         }
-        
+        else {
+          regionEl.style.display = 'none';
+        }
+
         if (shops.length > 0) {
           locationStatus.textContent = `${shops.length} shops found`;
           locationStatus.classList.add('synced');
