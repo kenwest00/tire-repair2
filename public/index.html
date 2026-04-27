@@ -336,6 +336,7 @@
   <div class="location-bar">
     <button id="detectBtn">📍 Find Tire Repair Near Me</button>
     <input type="text" id="locationInput" placeholder="Enter city & state or zip code (e.g. Nashville TN or 37204)">
+    <button id="quickSearchBtn" class="search-btn" title="Search region">Search</button>
     <span class="location-status" id="locationStatus"></span>
   </div>
 
@@ -454,8 +455,11 @@ let currentFilter = 'all';
             try {
               const res = await fetch(`/api/places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
               const shops = await res.json();
-              regionBanner?.style.display = 'block';
-              regionBanner?.textContent = 'Region: current location';
+              var regionBannerEl = document.getElementById('regionBanner');
+              if (regionBannerEl) {
+                regionBannerEl.style.display = 'block';
+                regionBannerEl.textContent = 'Region: current location';
+              }
               renderShops(shops);
             } catch (e) {
               locationStatus.textContent = 'Error finding location';
@@ -487,7 +491,7 @@ let currentFilter = 'all';
         
         const shops = await res.json();
         // Update region banner based on input
-        const regionEl = document.getElementById('regionBanner');
+    const regionEl = document.getElementById('regionBanner');
     if (query) {
       regionEl.style.display = 'block';
       regionEl.textContent = `Region: ${query}`;
@@ -510,6 +514,14 @@ let currentFilter = 'all';
       } catch (e) {
         locationStatus.textContent = 'Error finding location';
       }
+    }
+
+    // Support explicit search button for single-region UX
+    const quickSearchBtn = document.getElementById('quickSearchBtn');
+    if (quickSearchBtn) {
+      quickSearchBtn.addEventListener('click', async () => {
+        await searchLocation();
+      });
     }
 
     // Change location button: reset region and prompt for new location
