@@ -411,6 +411,7 @@ let allShops = [];
       
       locationInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
+          locationInput.value = locationInput.value.trim();
           await searchLocation();
         }
       });
