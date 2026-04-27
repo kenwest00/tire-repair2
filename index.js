@@ -134,7 +134,8 @@ app.get('/api/places', async (req, res) => {
     // Debug: log number of results for given region
     try { console.log('[API] /api/places region', {lat:userLat, lng:userLng, count: result?.length ?? 0}); } catch(e) {}
     if (!placesGoogle || placesGoogle.length === 0) {
-      const nearby = shops.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 100)
+      const radiusMiles = 60;
+      const nearby = shops.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= radiusMiles)
         .map(p => ({ ...p, distance: haversine(userLat, userLng, p.lat, p.lng) }));
       result = nearby;
     }
