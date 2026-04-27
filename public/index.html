@@ -573,12 +573,10 @@ let allShops = [];
         }
         
         renderShops(shops);
-      } catch (e) {
-locationStatus.textContent = 'Error finding location';
+} catch (e) {
+        locationStatus.textContent = 'Error finding location';
       }
-    });
-
-    init();
+    }
 
     init();
   </script>
