@@ -120,8 +120,8 @@ app.get('/api/places', async (req, res) => {
   }
   
   if (userLat && userLng) {
-    const places = await fetchGooglePlacesShops(userLat, userLng);
-    // limit to region (60 miles) around user
+    const placesGoogle = await fetchGooglePlacesShops(userLat, userLng);
+    // If Google returns nothing, fall back to local data within a larger radius
     function haversine(lat1, lon1, lat2, lon2){
       const R = 3959;
       const dLat = (lat2 - lat1) * Math.PI/180;
@@ -130,9 +130,15 @@ app.get('/api/places', async (req, res) => {
       const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
-    const nearby = places.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 100);
-    const result = nearby.length ? nearby : places;
-    return res.json(result.map(s => ({ ...s, distance: haversine(userLat, userLng, s.lat, s.lng), reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
+    let result = placesGoogle;
+    // Debug: log number of results for given region
+    try { console.log('[API] /api/places region', {lat:userLat, lng:userLng, count: result?.length ?? 0}); } catch(e) {}
+    if (!placesGoogle || placesGoogle.length === 0) {
+      const nearby = shops.filter(p => p.lat && p.lng && haversine(userLat, userLng, p.lat, p.lng) <= 100)
+        .map(p => ({ ...p, distance: haversine(userLat, userLng, p.lat, p.lng) }));
+      result = nearby;
+    }
+    return res.json(result.map(s => ({ ...s, distance: s.distance ?? (s.lat && s.lng ? haversine(userLat, userLng, s.lat, s.lng) : undefined), reviews_data: shops.find(db => db.id === s.id)?.reviews_data || [] })));
   }
   
   // Return empty if no valid location
