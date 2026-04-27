@@ -378,33 +378,9 @@ let allShops = [];
       return R * c;
     }
 
-    function getCurrentHours() {
-      const now = new Date();
-      return now.getDay() * 24 + now.getHours();
-    }
-
     function parseHours(hoursStr) {
-      const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
-      const now = new Date();
-      const currentDay = now.getDay();
-      const currentHour = now.getHours();
-      
+      if (!hoursStr) return 'unknown';
       if (hoursStr.includes('24/7')) return 'open';
-      
-      const parts = hoursStr.split(',').map(p => p.trim());
-      for (const part of parts) {
-        const match = part.match(/([A-Za-z]{3})-([A-Za-z]{3})\s+(\d+)AM?-(\d+)(?:PM?)?/);
-        if (match) {
-          const startDay = dayMap[match[1]];
-          const endDay = dayMap[match[2]];
-          const startHour = parseInt(match[3]);
-          const endHour = parseInt(match[4]) + (part.includes('PM') ? 12 : 0);
-          
-          if (currentDay >= startDay && currentDay <= endDay) {
-            if (currentHour >= startHour && currentHour < endHour) return 'open';
-          }
-        }
-      }
       return 'unknown';
     }
 
@@ -413,25 +389,41 @@ let allShops = [];
         const res = await fetch('/api/places');
         allShops = await res.json();
         renderShops(allShops);
-
+        
         if (navigator.geolocation) {
           detectBtn.addEventListener('click', detectLocation);
         }
+        
+        locationInput.addEventListener('keypress', async (e) => {
+          if (e.key === 'Enter') {
+            await searchLocation();
+          }
+        });
+        
+        locationInput.addEventListener('change', async () => {
+          await searchLocation();
+        });
       } catch (e) {
-        shopsList.innerHTML = `<div class="no-results">Error: ${e.message}</div>`;
+        shopsList.innerHTML = `<div class="no-results">Error loading: ${e.message}</div>`;
       }
     }
 
     function detectLocation() {
       detectBtn.disabled = true;
-      locationStatus.textContent = 'Detecting...';
+      locationStatus.textContent = 'Finding...';
       locationStatus.classList.remove('synced');
 
+      if (!navigator.geolocation) {
+        locationStatus.textContent = 'Location not supported';
+        detectBtn.disabled = false;
+        return;
+      }
+      
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           userLat = pos.coords.latitude;
           userLng = pos.coords.longitude;
-          locationStatus.textContent = '✓ Location synced';
+          locationStatus.textContent = 'Found!';
           locationStatus.classList.add('synced');
           detectBtn.disabled = false;
           
@@ -443,7 +435,7 @@ let allShops = [];
           renderShops(sorted);
         },
         (err) => {
-          locationStatus.textContent = '✗ Location denied';
+          locationStatus.textContent = 'Location denied';
           detectBtn.disabled = false;
         },
         { enableHighAccuracy: true, timeout: 10000 }
@@ -541,7 +533,17 @@ let allShops = [];
       }).join('');
     }
 
+    locationInput.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        await searchLocation();
+      }
+    });
+
     locationInput.addEventListener('change', async () => {
+      await searchLocation();
+    });
+
+    async function searchLocation() {
       const query = locationInput.value.trim();
       if (!query) return;
       
@@ -572,49 +574,9 @@ let allShops = [];
         
         renderShops(shops);
       } catch (e) {
-        locationStatus.textContent = 'Error finding location';
+locationStatus.textContent = 'Error finding location';
       }
     });
-
-    detectBtn.addEventListener('click', async () => {
-      locationStatus.textContent = 'Finding shops near you...';
-      
-      if (!navigator.geolocation) {
-        locationStatus.textContent = 'Geolocation not supported';
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const res = await fetch(`/api/places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-            const shops = await res.json();
-            locationStatus.textContent = `${shops.length} shops found near you`;
-            locationStatus.classList.add('synced');
-            renderShops(shops);
-          } catch (e) {
-            locationStatus.textContent = 'Error finding shops';
-          }
-        },
-        (err) => {
-          locationStatus.textContent = 'Location access denied';
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
-
-    shopsList.addEventListener('click', (e) => {
-      if (e.target.classList.contains('reviews-toggle')) {
-        const shopId = e.target.dataset.shop;
-        const section = document.getElementById(`reviews-${shopId}`);
-        if (section) {
-          section.classList.toggle('expanded');
-          e.target.textContent = section.classList.contains('expanded') 
-            ? `📖 ${e.target.textContent.includes('▼') ? '▲ Hide' : '▼'}`
-            : `📖 ${e.target.textContent.replace('▲ Hide', '▼')}`;
-        }
-      }
-});
 
     init();
       const params = new URLSearchParams();
