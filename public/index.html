@@ -363,7 +363,7 @@
     const resultsCount = document.getElementById('resultsCount');
     const filterBtns = document.querySelectorAll('.filters button');
 
-    let allShops = [];
+let allShops = [];
     let userLat = null, userLng = null;
     let currentFilter = 'all';
 
@@ -470,12 +470,18 @@
 
     function renderShops(shops) {
       const filtered = applyFilter(shops, currentFilter);
-      resultsCount.textContent = `${filtered.length} shop${filtered.length !== 1 ? 's' : ''} found`;
-
+      
       if (filtered.length === 0) {
-        shopsList.innerHTML = '<div class="no-results">No shops match your filters</div>';
+        if (shops.length === 0) {
+          shopsList.innerHTML = '<div class="no-results">Enter your location and tap "Find Tire Repair Near Me" to search nearby</div>';
+        } else {
+          resultsCount.textContent = `${filtered.length} shops found`;
+          shopsList.innerHTML = '<div class="no-results">No shops match your filters</div>';
+        }
         return;
       }
+      
+      resultsCount.textContent = `${filtered.length} shop${filtered.length !== 1 ? 's' : ''} found`;
 
       shopsList.innerHTML = filtered.map(shop => {
         const hoursStatus = parseHours(shop.hours);
