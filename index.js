@@ -114,6 +114,21 @@ app.get('/api/places', async (req, res) => {
   if (zip && zipCodes[zip]) {
     userLat = zipCodes[zip].lat;
     userLng = zipCodes[zip].lng;
+  } else if (zip) {
+    // If ZIP not in local map, try geocoding with Google (if API key present)
+    if (GOOGLE_API_KEY) {
+      try {
+        const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(zip)}&key=${GOOGLE_API_KEY}`;
+        const geoRes = await fetch(geoUrl);
+        const geoData = await geoRes.json();
+        if (geoData.results && geoData.results[0]) {
+          userLat = geoData.results[0].geometry.location.lat;
+          userLng = geoData.results[0].geometry.location.lng;
+        }
+      } catch (e) {
+        console.error('Geocode zip error', e);
+      }
+    }
   } else if (lat && lng) {
     userLat = parseFloat(lat);
     userLng = parseFloat(lng);
