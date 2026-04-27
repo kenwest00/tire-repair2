@@ -380,9 +380,23 @@ let allShops = [];
 
     function parseHours(hoursStr) {
       if (!hoursStr) return 'unknown';
-      if (hoursStr.includes('24/7')) return 'open';
-      if (hoursStr.includes('closed') || hoursStr.includes('Closed')) return 'closed';
-      if (hoursStr.includes('Open')) return 'open';
+      const hours = hoursStr.toLowerCase();
+      if (hours.includes('24/7') || hours.includes('24 hours')) return 'open';
+      if (hours.includes('closed') || hours.includes('not open')) return 'closed';
+      // Parse hours like "Mon-Fri 8AM-6PM"
+      const now = new Date();
+      const day = now.getDay();
+      const hour = now.getHours();
+      const match = hoursStr.match(/([A-Za-z]{3})-([A-Za-z]{3})\s+(\d{1,2})([AP]M?-?\d{1,2})([AP]M?)/i);
+      if (match) {
+        const dayMap = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+        const startDay = dayMap[match[1].toLowerCase()];
+        const endDay = dayMap[match[2].toLowerCase()];
+        const startHour = parseInt(match[3]) + (match[5]?.toLowerCase().includes('p') ? 12 : 0);
+        const endHour = parseInt(match[4]?.replace('-','') || match[3]) + (match[5]?.toLowerCase().includes('p') ? 12 : 0);
+        if (day >= startDay && day <= endDay && hour >= startHour && hour < endHour) return 'open';
+        return 'closed';
+      }
       return 'unknown';
     }
 
@@ -515,7 +529,7 @@ let allShops = [];
               </div>
               <div class="shop-hero-right">
                 <div class="shop-hours ${hoursStatus}">
-                  ${hoursStatus === 'open' ? '🟢 OPEN' : hoursStatus === 'closed' ? '🔴 CLOSED' : '⚪ ?'}
+                  ${hoursStatus === 'open' ? '🟢 OPEN NOW' : hoursStatus === 'closed' ? '🔴 CLOSED' : '⚪ Call for hours'}
                 </div>
                 ${distanceStr ? `<div class="shop-distance">${distanceStr}</div>` : ''}
               </div>
