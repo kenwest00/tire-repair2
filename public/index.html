@@ -433,19 +433,25 @@ let allShops = [];
       }
       
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           userLat = pos.coords.latitude;
           userLng = pos.coords.longitude;
           locationStatus.textContent = 'Found!';
           locationStatus.classList.add('synced');
           detectBtn.disabled = false;
           
-          const sorted = [...allShops].map(shop => ({
-            ...shop,
-            distance: getDistance(userLat, userLng, shop.lat, shop.lng)
-          })).sort((a, b) => a.distance - b.distance);
-          
-          renderShops(sorted);
+          // Fetch shops from API
+          try {
+            const res = await fetch(`/api/places?lat=${userLat}&lng=${userLng}`);
+            const shopList = await res.json();
+            const sorted = shopList.map(shop => ({
+              ...shop,
+              distance: getDistance(userLat, userLng, shop.lat, shop.lng)
+            })).sort((a, b) => a.distance - b.distance);
+            renderShops(sorted);
+          } catch (e) {
+            locationStatus.textContent = 'Error finding shops';
+          }
         },
         (err) => {
           locationStatus.textContent = 'Location denied';
